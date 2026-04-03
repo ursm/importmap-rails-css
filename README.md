@@ -16,11 +16,11 @@ Define asset mappings in `config/assets.yml`. Each key is an npm package name (a
 
 ```yaml
 tom-select:
-  dist/css/tom-select.bootstrap5.css: vendor/stylesheets/tom-select.css
+  dist/css/tom-select.bootstrap5.css: vendor/assets/stylesheets/tom-select.css
 
 flatpickr:
-  dist/flatpickr.css: vendor/stylesheets/flatpickr.css
-  dist/themes/dark.css: vendor/stylesheets/flatpickr-dark.css
+  dist/flatpickr.css: vendor/assets/stylesheets/flatpickr.css
+  dist/themes/dark.css: vendor/assets/stylesheets/flatpickr-dark.css
 ```
 
 Then pin the package as usual:
@@ -28,8 +28,8 @@ Then pin the package as usual:
 ```
 $ bin/importmap pin flatpickr
 Pinning "flatpickr" to vendor/javascript/flatpickr.js via download from https://ga.jspm.io/npm:flatpickr@4.6.13/dist/flatpickr.js
-Downloading "flatpickr/dist/flatpickr.css" to vendor/stylesheets/flatpickr.css
-Downloading "flatpickr/dist/themes/dark.css" to vendor/stylesheets/flatpickr-dark.css
+Downloading "flatpickr/dist/flatpickr.css" to vendor/assets/stylesheets/flatpickr.css
+Downloading "flatpickr/dist/themes/dark.css" to vendor/assets/stylesheets/flatpickr-dark.css
 ```
 
 `bin/importmap update` and `bin/importmap pristine` also download assets in the same way.
