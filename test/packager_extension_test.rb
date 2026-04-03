@@ -8,8 +8,7 @@ class PackagerExtensionTest < Minitest::Test
     FileUtils.mkdir_p File.join(@dir, 'config')
     File.write @importmap_path, ''
 
-    @vendor_js  = File.join(@dir, 'vendor', 'javascript')
-    @vendor_css = File.join(@dir, 'vendor', 'stylesheets')
+    @vendor_js = File.join(@dir, 'vendor', 'javascript')
 
     @packager = Importmap::Packager.new(@importmap_path, vendor_path: @vendor_js)
   end
@@ -18,84 +17,50 @@ class PackagerExtensionTest < Minitest::Test
     FileUtils.remove_entry @dir
   end
 
-  def test_download_fetches_css_when_style_field_exists
+  def test_download_copies_assets_from_config
+    write_assets_yml(
+      'flatpickr' => {
+        'dist/flatpickr.css'    => 'vendor/stylesheets/flatpickr.css',
+        'dist/themes/dark.css'  => 'vendor/stylesheets/flatpickr-dark.css'
+      }
+    )
+
     stub_js_download
-    stub_npm_registry('flatpickr', '4.6.13', style: 'dist/flatpickr.css')
-    stub_request(:get, 'https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.css')
-      .to_return(body: 'body { color: red; }')
+    stub_cdn('flatpickr', '4.6.13', 'dist/flatpickr.css', body: '.flatpickr {}')
+    stub_cdn('flatpickr', '4.6.13', 'dist/themes/dark.css', body: '.dark {}')
 
     Dir.chdir(@dir) do
       @packager.download('flatpickr', 'https://ga.jspm.io/npm:flatpickr@4.6.13/dist/flatpickr.js')
     end
 
-    css_path = File.join(@vendor_css, 'flatpickr.css')
-    assert File.exist?(css_path), 'CSS file should be created'
-
-    content = File.read(css_path)
-    assert_includes content, '/* flatpickr@4.6.13 downloaded from'
-    assert_includes content, 'body { color: red; }'
+    assert_equal '.flatpickr {}', File.read(File.join(@dir, 'vendor/stylesheets/flatpickr.css'))
+    assert_equal '.dark {}', File.read(File.join(@dir, 'vendor/stylesheets/flatpickr-dark.css'))
   end
 
-  def test_download_skips_css_when_no_style_field
+  def test_download_skips_when_no_config_entry
+    write_assets_yml({})
+
     stub_js_download
-    stub_npm_registry('lodash', '4.17.21', style: nil)
 
     Dir.chdir(@dir) do
       @packager.download('lodash', 'https://ga.jspm.io/npm:lodash@4.17.21/lodash.js')
     end
-
-    refute File.exist?(File.join(@vendor_css, 'lodash.css'))
   end
 
-  def test_download_handles_scoped_package
+  def test_download_skips_when_no_config_file
     stub_js_download
-    stub_npm_registry('@scope/pkg', '1.0.0', style: 'dist/style.css')
-    stub_request(:get, 'https://cdn.jsdelivr.net/npm/@scope/pkg@1.0.0/dist/style.css')
-      .to_return(body: '.pkg {}')
 
     Dir.chdir(@dir) do
-      @packager.download('@scope/pkg', 'https://ga.jspm.io/npm:@scope/pkg@1.0.0/index.js')
-    end
-
-    css_path = File.join(@vendor_css, '@scope--pkg.css')
-    assert File.exist?(css_path), 'CSS file should be created with -- separator'
-  end
-
-  def test_remove_deletes_css_file
-    Dir.chdir(@dir) do
-      FileUtils.mkdir_p @vendor_css
-      File.write File.join(@vendor_css, 'flatpickr.css'), 'body {}'
-      File.write @importmap_path, %(pin "flatpickr" # @4.6.13\n)
-
-      @packager.remove('flatpickr')
-    end
-
-    refute File.exist?(File.join(@vendor_css, 'flatpickr.css'))
-  end
-
-  def test_remove_succeeds_when_no_css_file
-    Dir.chdir(@dir) do
-      File.write @importmap_path, %(pin "flatpickr" # @4.6.13\n)
-
-      @packager.remove('flatpickr')
+      @packager.download('lodash', 'https://ga.jspm.io/npm:lodash@4.17.21/lodash.js')
     end
   end
 
-  def test_download_skips_css_when_npm_registry_fails
+  def test_download_skips_when_cdn_fails
+    write_assets_yml(
+      'pkg' => {'dist/style.css' => 'vendor/stylesheets/pkg.css'}
+    )
+
     stub_js_download
-    stub_request(:get, 'https://registry.npmjs.org/broken/1.0.0')
-      .to_return(status: 500)
-
-    Dir.chdir(@dir) do
-      @packager.download('broken', 'https://ga.jspm.io/npm:broken@1.0.0/index.js')
-    end
-
-    refute File.exist?(File.join(@vendor_css, 'broken.css'))
-  end
-
-  def test_download_skips_css_when_cdn_fails
-    stub_js_download
-    stub_npm_registry('pkg', '1.0.0', style: 'dist/style.css')
     stub_request(:get, 'https://cdn.jsdelivr.net/npm/pkg@1.0.0/dist/style.css')
       .to_return(status: 404)
 
@@ -103,20 +68,67 @@ class PackagerExtensionTest < Minitest::Test
       @packager.download('pkg', 'https://ga.jspm.io/npm:pkg@1.0.0/index.js')
     end
 
-    refute File.exist?(File.join(@vendor_css, 'pkg.css'))
+    refute File.exist?(File.join(@dir, 'vendor/stylesheets/pkg.css'))
+  end
+
+  def test_remove_deletes_assets
+    write_assets_yml(
+      'flatpickr' => {
+        'dist/flatpickr.css'   => 'vendor/stylesheets/flatpickr.css',
+        'dist/themes/dark.css' => 'vendor/stylesheets/flatpickr-dark.css'
+      }
+    )
+
+    Dir.chdir(@dir) do
+      FileUtils.mkdir_p File.join(@dir, 'vendor/stylesheets')
+      File.write File.join(@dir, 'vendor/stylesheets/flatpickr.css'), '.flatpickr {}'
+      File.write File.join(@dir, 'vendor/stylesheets/flatpickr-dark.css'), '.dark {}'
+      File.write @importmap_path, %(pin "flatpickr" # @4.6.13\n)
+
+      @packager.remove('flatpickr')
+    end
+
+    refute File.exist?(File.join(@dir, 'vendor/stylesheets/flatpickr.css'))
+    refute File.exist?(File.join(@dir, 'vendor/stylesheets/flatpickr-dark.css'))
+  end
+
+  def test_remove_succeeds_when_no_config_entry
+    Dir.chdir(@dir) do
+      File.write @importmap_path, %(pin "lodash" # @4.17.21\n)
+
+      @packager.remove('lodash')
+    end
+  end
+
+  def test_download_handles_binary_files
+    write_assets_yml(
+      'pkg' => {'dist/font.woff2' => 'vendor/fonts/pkg.woff2'}
+    )
+
+    binary_content = "\x00\x01\x02\xFF".b
+
+    stub_js_download
+    stub_cdn('pkg', '1.0.0', 'dist/font.woff2', body: binary_content)
+
+    Dir.chdir(@dir) do
+      @packager.download('pkg', 'https://ga.jspm.io/npm:pkg@1.0.0/index.js')
+    end
+
+    assert_equal binary_content, File.binread(File.join(@dir, 'vendor/fonts/pkg.woff2'))
   end
 
   private
+
+  def write_assets_yml(config)
+    File.write File.join(@dir, 'config', 'assets.yml'), YAML.dump(config)
+  end
 
   def stub_js_download
     stub_request(:get, /ga\.jspm\.io/).to_return(body: '// js')
   end
 
-  def stub_npm_registry(package, version, style:)
-    body = {name: package, version: version}
-    body[:style] = style if style
-
-    stub_request(:get, "https://registry.npmjs.org/#{package}/#{version}")
-      .to_return(body: body.to_json)
+  def stub_cdn(package, version, path, body:)
+    stub_request(:get, "https://cdn.jsdelivr.net/npm/#{package}@#{version}/#{path}")
+      .to_return(body: body)
   end
 end

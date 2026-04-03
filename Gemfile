@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gemspec
+gemspec name: 'importmap-rails-assets'
 
 if (rails_version = ENV['RAILS_VERSION'])
   gem 'railties', "~> #{rails_version}.0"
