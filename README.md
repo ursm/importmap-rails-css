@@ -38,14 +38,6 @@ Downloading "flatpickr/dist/themes/dark.css" to vendor/stylesheets/flatpickr-dar
 
 Packages without an entry in `config/assets.yml` are silently skipped.
 
-## Asset path
-
-Destination directories listed in `config/assets.yml` are automatically added to the asset path by the gem's Engine. For example, if your assets go into `vendor/stylesheets/`, you can reference them with `stylesheet_link_tag`:
-
-```erb
-<%= stylesheet_link_tag 'flatpickr' %>
-```
-
 ## License
 
 MIT

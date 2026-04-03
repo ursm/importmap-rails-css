@@ -14,5 +14,4 @@ Gem::Specification.new do |spec|
   spec.files = Dir['lib/**/*', 'LICENSE', 'README.md']
 
   spec.add_dependency 'importmap-rails', '>= 2.0'
-  spec.add_dependency 'railties',        '>= 7.0'
 end

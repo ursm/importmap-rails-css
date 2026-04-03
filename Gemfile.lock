@@ -3,7 +3,6 @@ PATH
   specs:
     importmap-rails-assets (0.1.0)
       importmap-rails (>= 2.0)
-      railties (>= 7.0)
 
 GEM
   remote: https://rubygems.org/
