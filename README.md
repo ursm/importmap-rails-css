@@ -2,6 +2,11 @@
 
 Vendor arbitrary assets (CSS, fonts, images, etc.) from packages pinned with [importmap-rails](https://github.com/rails/importmap-rails).
 
+## Supported versions
+
+- Ruby 3.3+
+- importmap-rails 2.1+
+
 ## Installation
 
 Add to your Gemfile:

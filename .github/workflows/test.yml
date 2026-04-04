@@ -12,14 +12,12 @@ jobs:
       fail-fast: false
       matrix:
         ruby: ['3.3', '3.4', '4.0']
-        rails: ['7.2', '8.0', '8.1']
+        importmap-rails: ['2.1', '2.2']
         exclude:
           - ruby: '4.0'
-            rails: '7.2'
-          - ruby: '4.0'
-            rails: '8.0'
+            importmap-rails: '2.1'
     env:
-      RAILS_VERSION: ${{ matrix.rails }}
+      IMPORTMAP_RAILS_VERSION: ${{ matrix.importmap-rails }}
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
