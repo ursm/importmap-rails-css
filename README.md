@@ -36,8 +36,6 @@ Downloading "flatpickr/dist/themes/dark.css" to vendor/assets/stylesheets/flatpi
 
 `bin/importmap unpin` removes the corresponding asset files as well.
 
-Packages without an entry in `config/assets.yml` are silently skipped.
-
 ## License
 
 MIT
